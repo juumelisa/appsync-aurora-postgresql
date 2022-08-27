@@ -1,0 +1,44 @@
+schema {
+    query: Query
+    mutation: Mutation
+    # subscription: Subscription
+}
+
+type Query {
+    getTransaction(id: ID!): Transaction
+    getAllTransaction: [Transaction]
+    # getAllTransactionAdmin(count: Int, nextToken: String): PaginatedTransactions
+    #     @aws_auth(cognito_groups: ["admin"])
+}
+
+type Mutation {
+    createTransaction(input: TransactionInput!): Transaction
+        # @aws_auth(cognito_groups: ["user"])
+    updateTransaction(id: ID!, input: TransactionInput): Transaction
+    deleteTransaction(id: ID!): Transaction
+}
+
+# type Subscription {
+#     newUpdate: Transaction
+#         @aws_subscribe(mutations: ["updateTransaction"])
+# }
+
+input TransactionInput {
+    user_id: String!
+    transaction_date: String!
+    amount: Int!
+    transaction_type: String!
+}
+
+type Transaction {
+    id: ID
+    user_id: String
+    transaction_date: String
+    amount: Int
+    transaction_type: String
+}
+
+# type PaginatedTransactions {
+# 	transactions: [Transaction!]
+# 	nextToken: String
+# }

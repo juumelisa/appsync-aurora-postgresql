@@ -1,0 +1,101 @@
+service: aurora-postgres
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: dev
+  region: ap-southeast-1
+
+useDotenv: true
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-appsync-plugin
+
+custom:
+  AURORA:
+    DB_NAME: ${env:RDS_PREFIX}_${env:STAGE}
+  appSync:
+    - name: aurora-postgresql
+      schema: schema.api.graphql
+      authenticationType:  API_KEY
+      apiKeys:
+        - apiKey
+      mappingTemplatesLocation: mapping-templates
+      mappingTemplates: ${file(./Resources/AppSyncResources/AppSyncMappingTemplates.yml)}
+
+      dataSources:
+        - type: RELATIONAL_DATABASE
+          name: AuroraTrx
+          description: "Aurora Serverless Database for Transaction"
+          config:
+            dbClusterIdentifier: { Ref: RDSCluster }
+            databaseName: ${self:custom.AURORA.DB_NAME}
+            awsSecretStoreArn: !Ref RDSInstanceSecret
+            serviceRoleArn: { Fn::GetAtt: [AppSyncRDSServiceRole, Arn] }
+            region: ${env:REGION}
+
+resources:
+  Resources:
+    RDSCluster:
+      Type: AWS::RDS::DBCluster
+      Properties:
+        MasterUsername: ${env:RDS_USERNAME}_${env:STAGE}
+        MasterUserPassword: ${env:DB_PASSWORD}
+        DatabaseName: ${self:custom.AURORA.DB_NAME}
+        Engine: aurora-postgresql
+        EngineMode: serverless
+        ScalingConfiguration:
+          AutoPause: true
+          MaxCapacity: 4
+          MinCapacity: 2
+          SecondsUntilAutoPause: 300
+        EnableHttpEndpoint: true
+        StorageEncrypted: true
+    RDSInstanceSecret:
+      Type: AWS::SecretsManager::Secret
+      Properties:
+        Description: 'Secret for the RDS instance'
+        SecretString: '{"username":"${env:RDS_USERNAME}_${env:STAGE}","password":"${env:DB_PASSWORD}"}'
+    SecretRDSInstanceAttachment:
+      Type: AWS::SecretsManager::SecretTargetAttachment
+      Properties:
+        SecretId: !Ref RDSInstanceSecret
+        TargetId: !Ref RDSCluster
+        TargetType: AWS::RDS::DBCluster
+    AppSyncRDSServiceRole:
+      Type: "AWS::IAM::Role"
+      Properties:
+        RoleName: "aurora_appsync_rds_${self:service}_${self:provider.stage}"
+        AssumeRolePolicyDocument:
+          Version: "2012-10-17"
+          Statement:
+            - Effect: "Allow"
+              Principal:
+                Service:
+                  - "appsync.amazonaws.com"
+              Action:
+                - "sts:AssumeRole"
+        Policies:
+          - PolicyName: "aurora_appsync_rds_${self:service}_${self:provider.stage}-Policy"
+            PolicyDocument:
+              Version: "2012-10-17"
+              Statement:
+                - Effect: 'Allow'
+                  Action:
+                    - 'rds-data:DeleteItems'
+                    - 'rds-data:ExecuteSql'
+                    - 'rds-data:ExecuteStatement'
+                    - 'rds-data:GetItems'
+                    - 'rds-data:InsertItems'
+                    - 'rds-data:UpdateItems'
+                  Resource:
+                    - 'arn:aws:rds:${env:REGION}:${env:ACCOUNT_ID}:cluster:*'
+                    - 'arn:aws:rds:${env:REGION}:${env:ACCOUNT_ID}:cluster:*:*'
+                - Effect: 'Allow'
+                  Action:
+                    - 'secretsmanager:GetSecretValue'
+                  Resource:
+                    - 'arn:aws:secretsmanager:*:*:secret:RDSInstanceSecret*'

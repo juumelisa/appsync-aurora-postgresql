@@ -1,0 +1,8 @@
+#set($id=$utils.autoId())
+{
+  "version": "2018-05-29",
+  "statements": [
+    "insert into transaction VALUES ('$id', '$ctx.args.input.amount', $ctx.args.input.transaction_date, $ctx.args.input.transaction_type, $ctx.args.input.user_id)",
+    "select * from transaction WHERE id = '$id'"
+  ]
+}
