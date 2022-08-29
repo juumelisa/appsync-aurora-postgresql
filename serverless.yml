@@ -15,14 +15,21 @@ plugins:
   - serverless-appsync-plugin
 
 custom:
+  defaultStage: dev
+  currentStage: ${opt:stage, self:custom.defaultStage}
+  userPoolName: rds-transaction-${self:custom.currentStage}
+  userPoolClientName: rds-transaction-client-${self:custom.currentStage}  
   AURORA:
     DB_NAME: ${env:RDS_PREFIX}_${env:STAGE}
   appSync:
     - name: aurora-postgresql
       schema: schema.api.graphql
-      authenticationType:  API_KEY
-      apiKeys:
-        - apiKey
+      authenticationType: AMAZON_COGNITO_USER_POOLS
+      userPoolConfig:
+        awsRegion: ${self:provider.region}
+        defaultAction: ALLOW
+        userPoolId:
+          Ref: CognitoUserPool
       mappingTemplatesLocation: mapping-templates
       mappingTemplates: ${file(./Resources/AppSyncResources/AppSyncMappingTemplates.yml)}
 
@@ -99,3 +106,36 @@ resources:
                     - 'secretsmanager:GetSecretValue'
                   Resource:
                     - 'arn:aws:secretsmanager:*:*:secret:RDSInstanceSecret*'
+    CognitoUserPool:
+      Type: "AWS::Cognito::UserPool"
+      Properties:
+        MfaConfiguration: OFF
+        UserPoolName: ${self:custom.userPoolName}
+        Policies:
+          PasswordPolicy:
+            MinimumLength: 6
+            RequireLowercase: False
+            RequireNumbers: True
+            RequireSymbols: False
+            RequireUppercase: False
+    CognitoUserPoolClient:
+      Type: "AWS::Cognito::UserPoolClient"
+      Properties:
+        ClientName: ${self:custom.userPoolClientName}
+        GenerateSecret: False
+        UserPoolId:
+          Ref: CognitoUserPool
+    CognitoUserPoolAdmin:
+      Type: "AWS::Cognito::UserPoolGroup"
+      Properties:
+        Description: "Admin can read everyone transaction"
+        GroupName: "admin"
+        UserPoolId:
+          Ref: CognitoUserPool
+    CognitoUserPoolUser:
+      Type: "AWS::Cognito::UserPoolGroup"
+      Properties:
+        Description: "User can read everyone transaction"
+        GroupName: "user"
+        UserPoolId:
+          Ref: CognitoUserPool

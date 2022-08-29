@@ -18,27 +18,21 @@ type Mutation {
     deleteTransaction(id: ID!): Transaction
 }
 
-# type Subscription {
-#     newUpdate: Transaction
-#         @aws_subscribe(mutations: ["updateTransaction"])
-# }
+enum TransactionType {
+	TopUp
+    Transfer
+}
 
 input TransactionInput {
-    user_id: String!
-    transaction_date: String!
     amount: Int!
-    transaction_type: String!
+    transaction_type: TransactionType
 }
 
 type Transaction {
     id: ID
     user_id: String
-    transaction_date: String
+    transaction_date: AWSDate
+    transaction_time: AWSTime
     amount: Int
     transaction_type: String
 }
-
-# type PaginatedTransactions {
-# 	transactions: [Transaction!]
-# 	nextToken: String
-# }

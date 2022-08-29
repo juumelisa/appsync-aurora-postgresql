@@ -1,3 +1,9 @@
+#set($data = $utils.rds.toJsonObject($ctx.result)[0][0])
+
+#if($data["user_id"] != $ctx.identity.sub)
+    $util.unauthorized()
+#end
+
 #if($ctx.error)
     $utils.error($ctx.error.message, $ctx.error.type)
 #end
