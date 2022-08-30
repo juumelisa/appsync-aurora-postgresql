@@ -5,15 +5,16 @@ schema {
 }
 
 type Query {
+    createTable: Transaction
     getTransaction(id: ID!): Transaction
-    getAllTransaction: [Transaction]
+    getAllTransaction(limit: Int!, page: Int!): [Transaction]
     # getAllTransactionAdmin(count: Int, nextToken: String): PaginatedTransactions
     #     @aws_auth(cognito_groups: ["admin"])
 }
 
 type Mutation {
     createTransaction(input: TransactionInput!): Transaction
-        # @aws_auth(cognito_groups: ["user"])
+        @aws_auth(cognito_groups: ["user"])
     updateTransaction(id: ID!, input: TransactionInput): Transaction
     deleteTransaction(id: ID!): Transaction
 }
