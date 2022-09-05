@@ -16,6 +16,7 @@ type Mutation {
     createTransaction(input: TransactionInput!): Transaction
         @aws_auth(cognito_groups: ["user"])
     updateTransaction(id: ID!, input: TransactionInput): Transaction
+    updateTrx(id: ID!, input: TransactionInput): Transaction
     deleteTransaction(id: ID!): Transaction
 }
 

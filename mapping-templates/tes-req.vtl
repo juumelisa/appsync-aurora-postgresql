@@ -1,0 +1,13 @@
+{
+    "operation" : "Scan",
+    "filter" : {
+        "expression" : "#userId = :userId",
+        "expressionNames" : {
+            "#userId" : "userId"
+        },
+        "expressionValues" : {
+        ":userId" : $util.dynamodb.toDynamoDBJson($ctx.stash.userId)
+        }
+    },
+    "nextToken": $util.toJson($util.defaultIfNullOrBlank($ctx.args.nextToken, null))
+}

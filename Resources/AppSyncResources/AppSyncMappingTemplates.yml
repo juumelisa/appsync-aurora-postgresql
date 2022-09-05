@@ -33,3 +33,18 @@
   field: createTable
   request: "Query.createTable.request.vtl"
   response: "Query.createTable.response.vtl"
+- dataSource: Pipeli
+  type: Mutation
+  field: updateTrx
+  pipelineConfig:
+    functions:
+      - dataSource: AuroraTrx
+        name: tesOne
+        request: "tes-req.vtl"
+        response: "tes-res.vtl"
+      - dataSource: AuroraTrx
+        name: tesTwo
+        request: "tes-req.vtl"
+        response: "tes-res.vtl"
+  request: "Mutation.updateTrx.request.vtl"
+  response: "Mutation.updateTrx.response.vtl"
